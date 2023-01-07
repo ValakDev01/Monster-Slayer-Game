@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue Basics</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Jost:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://unpkg.com/vue@next" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <!-- nagłówek naszej gry -->
+    <header>
+      <h1>Monster Slayer</h1>
+    </header>
+
+    <!-- kontener dla całej gry -->
+    <div id="game">
+      <!-- sekcja 1 gry, zdrowie potwora -->
+      <section id="monster" class="container">
+        <h2>Monster Health</h2>
+        <!-- to jest pasek zdrowia, fajnie to jest zrobione bo są tu 2 paski nachodzące na siebie i gdy zmniejszamy width -->
+        <!-- paska zielonego bo dostajemy dmg jakiś to widnieje nam cały nienaruszony pasek czerwony, który daje fajny efekt -->
+        <!-- ubywania zdrowia bohatera, ten div w środku to pasek na wierzchu, czyli ten zielony nasz -->
+        <div class="healthbar">
+          <!-- 13. implementuje funkcje computed pierwszą -->
+          <div class="healthbar__value" :style="monsterBarStyles"></div>
+        </div>
+      </section>
+
+      <!-- sekcja 2 gry, zdrowie usera -->
+      <!-- tutaj mamy już kolejną sekcję tym razem z naszym zdrowiem i te same zasady co wyżej -->
+      <section id="player" class="container">
+        <h2>Your Health</h2>
+        <div class="healthbar">
+          <!-- 14. implementuje funkcje computed drugą -->
+          <div class="healthbar__value" :style="playerBarStyles"></div>
+        </div>
+      </section>
+
+      <!-- sekcja 3, wynik końcowy gry, domyślnie niewidoczna -->
+      <!-- mamy tutaj napis główny Game Over! i 3 opcje uzależnione w zależności od rezultatu gry -->
+      <!-- na samym dole jest button do rozpoczecia nowej gry -->
+      <section class="container" v-if="winner">
+        <!-- 31. teraz w kodzie html robimy pewne działania. najpierw stosujemy dyrektywę v-if do której przypisujemy wartość winner -->
+        <!-- jest to nasza zmienna, która domyślnie przechowuje null czyli nic, zwrca false czyli. Ogólnie v-if czeka na value -->
+        <!-- true lub false np. jeżeli wpisze tam true zamiast winner to pojawi się na stronie ten cały blok ta sekcja z tymi -->
+        <!-- komenatrzami, jak false dam to nie pojawi się. Więc jeżeli będziemy walczyć z potworem to dojdziemy do momentu -->
+        <!-- gdzie nasze watchery wytypuja zwycięzce lub remis i dodadza te value do tej zmiennej i juz nie bedzie pusta -->
+        <!-- czyli juz nie bedzie zwracać false, tylko teraz true bo będzie miała value już -->
+        <!-- Pamiętajmy, że te dyrektywy v-if v-else v-else-if one są ze sobą połączone i muszą występować sekcja obok sekcji -->
+        <!-- jeżeli chcemy żeby poprawnie all działało np. jak tutaj dajemy w sekcji naszej 3 v-if='condition' jak będzie -->
+        <!-- true to pojawi się ta lista komenatrzy, ale jak będzie false bo np. jesteśmy w trakcie gdy bądź na początku -->
+        <!-- to wtedy zobacz, że w sekcji 4 dajemy w głównym bloku, rodzicu v-else czyli włączy się to w przeciwnym wypadku -->
+        <!-- wniosek: nigdy te 2 sekcje nie pojawia sie razem, jedna albo druga. sekcje główne rodzice w których są dyrektywy -->
+        <!-- są na tym samym poziomie zagnieżdzenia dlatego all działa prawidłowo bez problemów -->
+        <!-- teraz zagłębmy się wewnątrz naszej sekcji nr. 3. Napis Game over pojawi się zawsze. Napis You lost! pojawi się -->
+        <!-- tylko wtedy gdy wartość zmiennje winner będzie równa monster, napis you won pojawi się w przeciwnym wypadku -->
+        <!-- jeżeli zmienna winner bedzie wartość player przechowywać i na sammy koncu w przeciwnym wypadku pojawi sie napis remis -->
+        <!-- ty all nagłówki są też na tym samym poziomie zagniezdzenia dlatego all ładnie działa bez przeszkód. -->
+        <h2>Game Over!</h2>
+        <h3 v-if="winner == 'monster'">You lost!</h3>
+        <h3 v-else-if="winner == 'player'">You won!</h3>
+        <h3 v-else="winner == 'draw'">It's a draw!</h3>
+        <!-- 25. bindujemy naszą metode na clicka z buttonem -->
+        <button @click="startGame">Start New Game!</button>
+      </section>
+
+      <!-- sekcja 4, przyciski do grania -->
+      <section id="controls" v-else>
+        <!-- 9. dodajemy event onclick który uruchamia funkcje attackMonster -->
+        <button @click="attackMonster">ATTACK</button>
+        <!-- 16. bindujemy naszą funkcję ze specjalnym atakiem -->
+        <!-- dodatkowo chcemy aby nasz przycisk nie był dostępny zawsze, jednak tylko w okreslonych sutuacjach -->
+        <!-- wtedy, gdy np. ilość rund jest podzielna bez reszty przez 3, czyli co 3 rundy przycisk będzie można użyć -->
+        <!-- dlatego tutaj używamy atrybutu disabled oczywiście z : bo jest to bind wartości do tego atrybuty z HTML disabled -->
+        <!-- ta metoda musi zwrócić true albo false i w zależności od value przycisk będzie off lub on -->
+        <button :disabled="mayUseSpecialAttack" @click="specialAttackMonster">SPECIAL ATTACK</button>
+        <!-- 23. przypisujemy nasza funkcje do healania -->
+        <button @click="healPlayer">HEAL</button>
+        <!-- 28. bindujemy funkcje do poddawania się do buttona -->
+        <button @click="surrender">SURRENDER</button>
+      </section>
+
+      <!-- sekcja 5, logi z gry -->
+      <section id="log" class="container">
+        <h2>Battle Log</h2>
+        <ul>
+          <!-- 34. robimy pętle for/of do tablic jednak w Vue pamiętac by używać in w znaczniku li ofc. -->
+          <!-- jak tego v-for dalibyśmy w ul to też by wszystko działało ładnie, ale lepiej tak na logikę dac w li -->
+          <!-- bo w końcu chcemy wywowaływać w pętli nowe wiersze dużej listy -->
+          <li v-for="logMessage in logMessages">
+            <!-- dajemy '' bo mamy -- -->
+            <!-- tu gdzie nazwa klasy można dać ogólnie funkcje która zwróci true lub false, czyli styl się włączy lub nie -->
+            <!-- ale można też wstawić jakiś cindition kiedy ma się dana metoda załączyć jak tutaj np. gdy -->
+            <!-- akcja została wykonana przez gracza to wtedy kolor się ustawi na fiolet i odpowiednio na orange przy potworze -->
+            <span :class="{ 'log--player': logMessage.actionBy == 'player', 'log--monster': logMessage.actionBy == 'monster' }">{{ logMessage.actionBy == 'player' ? 'Player' : 'Monster' }}</span>
+            <span v-if="logMessage.actionType == 'heal'"> heals himself for <span class="log--heal">{{ logMessage.actionValue }}</span></span>
+            <span v-else> attacks and deals <span class="log--damage">{{ logMessage.actionValue }}</span></span>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>
